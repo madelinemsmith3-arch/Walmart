@@ -43,6 +43,84 @@ feature_recipe <- recipe(~., data = features_wal) %>%
 prep_rec <- prep(feature_recipe)
 features_imputed <- bake(prep_rec, new_data = features_wal)
 
+######################### FACEBOOK PROPHETS ##############################
+
+##########################################
+## Fit Prophet Model to see how it does ##
+##########################################
+
+## Choose Store and Dept
+store <- 1
+dept <- 1
+
+## Filter and Rename to match prophet syntax
+sd_train <- train_wal %>%
+  filter(Store==store, Dept==dept) %>%
+  rename(y=Weekly_Sales, ds=Date)
+
+sd_test <- test_wal %>%
+  filter(Store==store, Dept==dept) %>%
+  rename(ds=Date)
+
+library(prophet)
+
+## Fit a prophet model
+prophet_model <- prophet() %>%
+  add_regressor("CPI") %>%
+  add_regressor("Unemployment") %>%
+  add_regressor("TotalMarkdown") %>%
+  fit.prophet(df=sd_train)
+
+## Predict Using Fitted prophet Model
+fitted_vals <- predict(prophet_model, df=sd_train) #For Plotting Fitted Values
+sd_test_clean <- na.omit(sd_test)
+test_preds <- predict(prophet_model, sd_test_clean)
+
+## Plot Fitted and Forecast on Same Plot
+p1 <- ggplot() +
+  geom_line(data = sd_train, mapping = aes(x = ds, y = y, color = "Data")) +
+  geom_line(data = fitted_vals, mapping = aes(x = as.Date(ds), y = yhat, color = "Fitted")) +
+  geom_line(data = test_preds, mapping = aes(x = as.Date(ds), y = yhat, color = "Forecast")) +
+  scale_color_manual(values = c("Data" = "black", "Fitted" = "blue", "Forecast" = "red")) +
+  labs(color="Store 1 Dept 1")
+
+## Choose Store and Dept
+store <- 1
+dept <- 4
+
+## Filter and Rename to match prophet syntax
+sd_train <- train_wal %>%
+  filter(Store==store, Dept==dept) %>%
+  rename(y=Weekly_Sales, ds=Date)
+
+sd_test <- test_wal %>%
+  filter(Store==store, Dept==dept) %>%
+  rename(ds=Date)
+
+library(prophet)
+
+## Fit a prophet model
+prophet_model <- prophet() %>%
+  add_regressor("CPI") %>%
+  add_regressor("Unemployment") %>%
+  add_regressor("TotalMarkdown") %>%
+  fit.prophet(df=sd_train)
+
+## Predict Using Fitted prophet Model
+fitted_vals <- predict(prophet_model, df=sd_train) #For Plotting Fitted Values
+sd_test_clean <- na.omit(sd_test)
+test_preds <- predict(prophet_model, sd_test_clean)
+
+
+p2 <- ggplot() +
+  geom_line(data = sd_train, mapping = aes(x = ds, y = y, color = "Data")) +
+  geom_line(data = fitted_vals, mapping = aes(x = as.Date(ds), y = yhat, color = "Fitted")) +
+  geom_line(data = test_preds, mapping = aes(x = as.Date(ds), y = yhat, color = "Forecast")) +
+  scale_color_manual(values = c("Data" = "black", "Fitted" = "blue", "Forecast" = "red")) +
+  labs(color="Store 1 Dept 4")
+
+library(patchwork)
+p1 + p2
 
 
 ###################### PENALIZED REGRESSION DEPT 5##########################
